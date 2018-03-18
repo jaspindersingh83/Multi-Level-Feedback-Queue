@@ -51,7 +51,6 @@ describe('Process', () => {
     it("should emit a PROCESS_READY interrupt and change the process's state when a blocking process completes its blocking execution", () => {
         const blockingProcess = new Process(0, 0, true);
         const queueSpy = sinon.spy(queue, 'emitInterrupt');
-        // blockingProcess.queue = queue;
         queue.enqueue(blockingProcess);
         blockingProcess.executeBlockingProcess(1000);
         expect(queueSpy.calledWith(blockingProcess, SchedulerInterrupt.PROCESS_READY));

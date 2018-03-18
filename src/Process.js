@@ -34,8 +34,7 @@ class Process {
     executeProcess(time) {
         this.stateChanged = false;
         if(this.blockingTimeNeeded){
-            let source = this._pid;
-            this.queue.emitInterrupt(source,SchedulerInterrupt.PROCESS_BLOCKED);
+            this.queue.emitInterrupt(this,SchedulerInterrupt.PROCESS_BLOCKED);
             this.stateChanged = true;
         } else {
             this.cpuTimeNeeded -= time;
@@ -47,9 +46,8 @@ class Process {
    // the process is ready and toggle `this.stateChanged` to `true`
     executeBlockingProcess(time) {
         this.blockingTimeNeeded = this.blockingTimeNeeded-time;
-        if(this.blockingTimeNeeded < 0){
-            let source = this.pid;
-            this.queue.emitInterrupt(source,SchedulerInterrupt.PROCESS_READY);
+        if(this.blockingTimeNeeded <= 0){
+            this.queue.emitInterrupt(this,SchedulerInterrupt.PROCESS_READY);
             this.stateChanged = true;
         }
     }

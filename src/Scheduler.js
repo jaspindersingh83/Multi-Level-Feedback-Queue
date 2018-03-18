@@ -1,4 +1,5 @@
 const Queue = require('./Queue'); 
+const Process = require('./Process')
 const { 
     QueueType,
     PRIORITY_LEVELS,
@@ -29,17 +30,56 @@ class Scheduler {
     // If yes, then break out of the infinite loop
     // Otherwise, perform another loop iteration
     run() {
+        while (true) {
+            const currentTime = Date.now();
+            const workTime = currentTime - this.clock;
+            this.clock = currentTime;
 
+            if (!this.blockingQueue.isEmpty()) {
+                this.blockingQueue.doBlockingWork(workTime);
+            }
+
+            for (let i = 0; i < PRIORITY_LEVELS; i++) {
+                const queue = this.runningQueues[i];
+                if (!queue.isEmpty()) {
+                    queue.doCPUWork(workTime);
+                    break;
+                }
+            }
+
+            if (this.allEmpty()) {
+                break;
+            }
+        }
     }
 
     // Checks that all queues have no processes 
     allEmpty() {
-
+        let j = 0;
+        if(this.blockingQueue.isEmpty()){ 
+            while(j < this.runningQueues.length){
+                if(this.runningQueues[j].isEmpty() === false){
+                    return false;
+                }
+                j++;
+            }
+            return true
+        }
+        return false;
     }
 
     // Adds a new process to the highest priority level running queue
     addNewProcess(process) {
-
+        let minPriority = 99999;
+        let minPriorityQueue;
+        for(let i = 0; i < this.runningQueues.length; i++){
+            let currentQueue = this.runningQueues[i];
+            if(currentQueue.priorityLevel <minPriority){
+                minPriority = currentQueue.priorityLevel;
+                minPriorityQueue = currentQueue;
+            }
+        }
+        minPriorityQueue.enqueue(process);
     }
 
     // The scheduler's interrupt handler that receives a queue, a process, and an interrupt string
@@ -49,6 +89,28 @@ class Scheduler {
     // If it is a running queue, add the process to the next lower priority queue, or back into itself if it is already in the lowest priority queue
     // If it is a blocking queue, add the process back to the blocking queue
     handleInterrupt(queue, process, interrupt) {
+        if(interrupt === 'PROCESS_BLOCKED'){
+            this.blockingQueue.enqueue(process);
+        }
+        if(interrupt === 'PROCESS_READY'){
+            this.addNewProcess(process);
+        }
+        if(interrupt === 'LOWER_PRIORITY'){
+            if(this.runningQueues.indexOf(queue)){
+                let index = this.runningQueues.indexOf(queue);
+                let currentqueuePriority = queue.priorityLevel;
+                for(let i = index+1; i < this.runningQueues.length; i++){
+                    if(this.runningQueues[i].priorityLevel < currentqueuePriority){
+                        this.runningQueues[i].enqueue(process);
+                        return;
+                    }
+                }
+                queue.enqueue(process);
+            }
+            if(queue === this.blockingQueue){
+                this.blockingQueue.enqueue(process);
+            }
+        }
 
     }
 

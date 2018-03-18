@@ -80,7 +80,6 @@ describe('Scheduler', () => {
         scheduler.addNewProcess(process2);
         scheduler.addNewProcess(process3);
         scheduler.run();
-
         expect(blockingQueueSpy.called).toBe(true);
         expect(queue1Spy.called).toBe(true);
         expect(blockingQueue.isEmpty()).toBe(true);
